@@ -1,0 +1,385 @@
+{% extends "analytics/base.html" %}
+
+{% block title %}Model Performance & Real-Time Price Prediction{% endblock %}
+
+{% block extra_css %}
+<style>
+    .prediction-banner {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 2.2rem;
+        border: 1px solid #334155;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .prediction-price {
+        font-size: 3.2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: #38bdf8;
+        text-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+    }
+    
+    .val-chip {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>4. Model Performance & Real-Time Price Prediction
+            </h2>
+            <p class="text-muted mb-0">
+                Evaluate algorithm performance across 5 regression models and input custom vehicle attributes to compute instant market valuations.
+            </p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary-custom btn-sm">
+                <i class="fa-solid fa-chart-line me-1"></i> Visual Analytics
+            </a>
+            <a href="{% url 'lab_report' %}" class="btn btn-primary-custom btn-sm">
+                <i class="fa-solid fa-file-lines me-1"></i> Lab Report &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- 1. Model Evaluation Metrics Scorecard -->
+    <div class="custom-card mb-4">
+        <div class="card-header-custom">
+            <span class="fw-bold text-dark fs-5">
+                <i class="fa-solid fa-medal text-warning me-2"></i>Machine Learning Models Performance Comparison
+            </span>
+            <span class="badge bg-success px-3 py-2">
+                <i class="fa-solid fa-crown me-1"></i> Best Model: {{ best_model_name }}
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Model Architecture</th>
+                            <th>R² Score</th>
+                            <th>Adjusted R²</th>
+                            <th>RMSE (USD)</th>
+                            <th>MAE (USD)</th>
+                            <th>MAPE</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in metrics_summary %}
+                            <tr {% if m.model_name == best_model_name %}class="table-primary fw-semibold"{% endif %}>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if m.model_name == best_model_name %}
+                                            <i class="fa-solid fa-circle-check text-primary me-2"></i>
+                                        {% else %}
+                                            <i class="fa-regular fa-circle text-muted me-2"></i>
+                                        {% endif %}
+                                        <span>{{ m.model_name }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge {% if m.r2_score > 0.90 %}bg-success{% elif m.r2_score > 0.80 %}bg-info{% else %}bg-warning text-dark{% endif %}">
+                                        {{ m.r2_score }}
+                                    </span>
+                                </td>
+                                <td class="font-monospace small">{{ m.adj_r2_score }}</td>
+                                <td class="font-monospace small">${{ m.rmse }}</td>
+                                <td class="font-monospace small">${{ m.mae }}</td>
+                                <td class="font-monospace small">{{ m.mape }}%</td>
+                                <td>
+                                    {% if m.model_name == best_model_name %}
+                                        <span class="badge bg-primary">Active Inference</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-muted border">Evaluated</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white border-top p-3 small text-muted">
+            <i class="fa-solid fa-circle-info text-primary me-1"></i>
+            $R^2$ represents the proportion of variance explained by the model (higher is better). $RMSE$ and $MAE$ quantify average error in dollar terms (lower is better).
+        </div>
+    </div>
+
+    <!-- 2. Prediction Form & Real-Time Output -->
+    <div class="row g-4">
+        <!-- Interactive Form -->
+        <div class="col-lg-7">
+            <div class="custom-card h-100">
+                <div class="card-header-custom">
+                    <span class="fw-bold text-dark">
+                        <i class="fa-solid fa-sliders text-primary me-2"></i>Automobile Specifications Form
+                    </span>
+                    <span class="badge bg-light text-dark border">Instant Real-time AJAX</span>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" id="predictForm" action="{% url 'predict' %}">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <!-- Brand -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Automobile Brand</label>
+                                <select name="brand" id="inp_brand" class="form-select live-trigger">
+                                    <option value="Toyota" {% if form_inputs.brand == 'Toyota' %}selected{% endif %}>Toyota</option>
+                                    <option value="Honda" {% if form_inputs.brand == 'Honda' %}selected{% endif %}>Honda</option>
+                                    <option value="Ford" {% if form_inputs.brand == 'Ford' %}selected{% endif %}>Ford</option>
+                                    <option value="BMW" {% if form_inputs.brand == 'BMW' %}selected{% endif %}>BMW</option>
+                                    <option value="Mercedes-Benz" {% if form_inputs.brand == 'Mercedes-Benz' %}selected{% endif %}>Mercedes-Benz</option>
+                                    <option value="Audi" {% if form_inputs.brand == 'Audi' %}selected{% endif %}>Audi</option>
+                                    <option value="Hyundai" {% if form_inputs.brand == 'Hyundai' %}selected{% endif %}>Hyundai</option>
+                                    <option value="Nissan" {% if form_inputs.brand == 'Nissan' %}selected{% endif %}>Nissan</option>
+                                    <option value="Chevrolet" {% if form_inputs.brand == 'Chevrolet' %}selected{% endif %}>Chevrolet</option>
+                                    <option value="Volkswagen" {% if form_inputs.brand == 'Volkswagen' %}selected{% endif %}>Volkswagen</option>
+                                </select>
+                            </div>
+
+                            <!-- Year -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Model Year</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                                    <input type="number" name="year" id="inp_year" class="form-control live-trigger" min="2010" max="2025" value="{{ form_inputs.year }}">
+                                </div>
+                            </div>
+
+                            <!-- Mileage -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Mileage (Kilometers)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-gauge"></i></span>
+                                    <input type="number" name="mileage" id="inp_mileage" class="form-control live-trigger" min="0" max="300000" step="500" value="{{ form_inputs.mileage }}">
+                                </div>
+                            </div>
+
+                            <!-- Engine Size -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Engine Size (Litres)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-engine"></i></span>
+                                    <input type="number" name="engine_size" id="inp_engine_size" class="form-control live-trigger" min="0.0" max="6.0" step="0.1" value="{{ form_inputs.engine_size }}">
+                                </div>
+                            </div>
+
+                            <!-- Horsepower -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Horsepower (HP)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-bolt"></i></span>
+                                    <input type="number" name="horsepower" id="inp_horsepower" class="form-control live-trigger" min="50" max="550" value="{{ form_inputs.horsepower }}">
+                                </div>
+                            </div>
+
+                            <!-- Fuel Efficiency -->
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">Fuel Efficiency (km/l)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-road"></i></span>
+                                    <input type="number" name="fuel_efficiency" id="inp_fuel_efficiency" class="form-control live-trigger" min="5.0" max="40.0" step="0.5" value="{{ form_inputs.fuel_efficiency }}">
+                                </div>
+                            </div>
+
+                            <!-- Fuel Type -->
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-dark">Fuel Type</label>
+                                <select name="fuel_type" id="inp_fuel_type" class="form-select live-trigger">
+                                    <option value="Petrol" {% if form_inputs.fuel_type == 'Petrol' %}selected{% endif %}>Petrol</option>
+                                    <option value="Diesel" {% if form_inputs.fuel_type == 'Diesel' %}selected{% endif %}>Diesel</option>
+                                    <option value="Hybrid" {% if form_inputs.fuel_type == 'Hybrid' %}selected{% endif %}>Hybrid</option>
+                                    <option value="Electric" {% if form_inputs.fuel_type == 'Electric' %}selected{% endif %}>Electric</option>
+                                </select>
+                            </div>
+
+                            <!-- Transmission -->
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-dark">Transmission</label>
+                                <select name="transmission" id="inp_transmission" class="form-select live-trigger">
+                                    <option value="Automatic" {% if form_inputs.transmission == 'Automatic' %}selected{% endif %}>Automatic</option>
+                                    <option value="Manual" {% if form_inputs.transmission == 'Manual' %}selected{% endif %}>Manual</option>
+                                </select>
+                            </div>
+
+                            <!-- Owner Type -->
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-dark">Owner Type</label>
+                                <select name="owner_type" id="inp_owner_type" class="form-select live-trigger">
+                                    <option value="First" {% if form_inputs.owner_type == 'First' %}selected{% endif %}>First Owner</option>
+                                    <option value="Second" {% if form_inputs.owner_type == 'Second' %}selected{% endif %}>Second Owner</option>
+                                    <option value="Third" {% if form_inputs.owner_type == 'Third' %}selected{% endif %}>Third Owner</option>
+                                </select>
+                            </div>
+
+                            <!-- Seats Hidden or 5 Default -->
+                            <input type="hidden" name="seats" id="inp_seats" value="{{ form_inputs.seats }}">
+                        </div>
+
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary-custom flex-grow-1">
+                                <i class="fa-solid fa-calculator me-1"></i> Calculate Valuation
+                            </button>
+                            <button type="button" class="btn btn-secondary-custom" onclick="resetFormDefaults();">
+                                Reset Defaults
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-Time Valuation Result Card -->
+        <div class="col-lg-5">
+            <div class="prediction-banner h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25 px-3 py-2 small fw-semibold">
+                            <i class="fa-solid fa-microchip me-1"></i> Live Valuation Model
+                        </span>
+                        <span class="small text-white-50" id="liveStatus">
+                            <i class="fa-solid fa-signal text-success me-1"></i> Ready
+                        </span>
+                    </div>
+
+                    <h5 class="text-white-50 fw-normal mb-1">Estimated Market Value:</h5>
+                    <div class="prediction-price" id="resPrice">
+                        ${% if prediction_result %}{{ prediction_result.predicted_price|floatformat:2 }}{% else %}23,516.47{% endif %}
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 mt-2 mb-4">
+                        <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-30">
+                            Confidence Band (&plusmn;8%)
+                        </span>
+                        <span class="text-white-50 small" id="resBand">
+                            ${% if prediction_result %}{{ prediction_result.low_estimate|floatformat:0 }} - ${{ prediction_result.high_estimate|floatformat:0 }}{% else %}21,635 - 25,398{% endif %}
+                        </span>
+                    </div>
+
+                    <div class="row g-2 mb-4">
+                        <div class="col-6">
+                            <div class="val-chip">
+                                <small class="text-white-50 d-block">Model Architecture</small>
+                                <span class="fw-bold text-white small" id="resModel">
+                                    {% if prediction_result %}{{ prediction_result.model_used }}{% else %}{{ best_model_name }}{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="val-chip">
+                                <small class="text-white-50 d-block">Valuation Status</small>
+                                <span class="fw-bold text-info small" id="resStatus">
+                                    Optimal Market Price
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-3 rounded-3 bg-white bg-opacity-5 border border-white border-opacity-10">
+                    <div class="small fw-semibold text-white mb-2">
+                        <i class="fa-solid fa-chart-line text-warning me-1"></i> Key Valuation Drivers:
+                    </div>
+                    <ul class="small text-white-50 mb-0 ps-3">
+                        <li><strong>Horsepower & Engine:</strong> Dominates 65%+ of predictive pricing weight.</li>
+                        <li><strong>Depreciation:</strong> ~6.5% annual compounded decay relative to vehicle age.</li>
+                        <li><strong>Mileage Wear:</strong> Significant discount factor for odometer readings > 100,000 km.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Live AJAX Auto-Prediction
+    const inputs = document.querySelectorAll('.live-trigger');
+    const liveStatus = document.getElementById('liveStatus');
+    const resPrice = document.getElementById('resPrice');
+    const resBand = document.getElementById('resBand');
+    const resModel = document.getElementById('resModel');
+    let debounceTimer = null;
+
+    inputs.forEach(input => {
+        input.addEventListener('input', triggerLivePrediction);
+        input.addEventListener('change', triggerLivePrediction);
+    });
+
+    function triggerLivePrediction() {
+        clearTimeout(debounceTimer);
+        liveStatus.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-info me-1"></i> Calculating...';
+
+        debounceTimer = setTimeout(() => {
+            const payload = {
+                brand: document.getElementById('inp_brand').value,
+                year: parseInt(document.getElementById('inp_year').value) || 2021,
+                mileage: parseFloat(document.getElementById('inp_mileage').value) || 35000,
+                engine_size: parseFloat(document.getElementById('inp_engine_size').value) || 2.0,
+                horsepower: parseFloat(document.getElementById('inp_horsepower').value) || 160,
+                fuel_efficiency: parseFloat(document.getElementById('inp_fuel_efficiency').value) || 18.0,
+                seats: parseInt(document.getElementById('inp_seats').value) || 5,
+                fuel_type: document.getElementById('inp_fuel_type').value,
+                transmission: document.getElementById('inp_transmission').value,
+                owner_type: document.getElementById('inp_owner_type').value
+            };
+
+            fetch("{% url 'api_predict' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const price = Number(data.data.predicted_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    const low = Number(data.data.low_estimate).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                    const high = Number(data.data.high_estimate).toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+                    resPrice.textContent = `$${price}`;
+                    resBand.textContent = `$${low} - $${high}`;
+                    resModel.textContent = data.data.model_used;
+                    liveStatus.innerHTML = '<i class="fa-solid fa-signal text-success me-1"></i> Live Updated';
+                } else {
+                    liveStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-warning me-1"></i> Update error';
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                liveStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Offline';
+            });
+        }, 350);
+    }
+
+    function resetFormDefaults() {
+        document.getElementById('inp_brand').value = 'Toyota';
+        document.getElementById('inp_year').value = 2021;
+        document.getElementById('inp_mileage').value = 35000;
+        document.getElementById('inp_engine_size').value = 2.0;
+        document.getElementById('inp_horsepower').value = 160;
+        document.getElementById('inp_fuel_efficiency').value = 18.0;
+        document.getElementById('inp_fuel_type').value = 'Petrol';
+        document.getElementById('inp_transmission').value = 'Automatic';
+        document.getElementById('inp_owner_type').value = 'First';
+        triggerLivePrediction();
+    }
+</script>
+{% endblock %}

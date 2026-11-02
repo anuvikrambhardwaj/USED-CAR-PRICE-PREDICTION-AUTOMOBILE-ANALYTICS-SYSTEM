@@ -1,0 +1,224 @@
+{% extends "analytics/base.html" %}
+
+{% block title %}Data Mining Lab Project Report & Theory{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 2.2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .math-formula {
+        background: #f8fafc;
+        border-left: 4px solid #2563eb;
+        padding: 0.85rem 1.25rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.95rem;
+        color: #1e293b;
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+    }
+    
+    .qa-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fa-solid fa-file-contract text-primary me-2"></i>Data Mining Lab Project Report & Architecture
+            </h2>
+            <p class="text-muted mb-0">
+                Academic documentation of pipeline algorithms, preprocessing mathematics, experimental evaluation, and viva-voce reference guide.
+            </p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <a href="{% url 'predict' %}" class="btn btn-primary-custom btn-sm">
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Launch Predictor
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary-custom btn-sm">
+                <i class="fa-solid fa-chart-line me-1"></i> Visual Analytics
+            </a>
+        </div>
+    </div>
+
+    <!-- Section 1: Project Overview & Objectives -->
+    <div class="report-card">
+        <h4 class="fw-bold text-dark mb-3">
+            <span class="badge bg-primary me-2">Section 1</span>Project Overview & Problem Statement
+        </h4>
+        <p class="text-secondary leading-relaxed">
+            The objective of this project is to develop an automated <strong>Used Car Price Prediction & Automobile Analytics System</strong> using fundamental Data Mining and Machine Learning techniques. In secondary automobile markets, vehicle depreciation is non-linear and heavily influenced by an interplay of mechanical specifications (horsepower, engine capacity), temporal factors (manufacturing year/age), usage wear (odometer mileage), and brand reputation.
+        </p>
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-bullseye text-primary me-2"></i>Part 1: Data Mining & ML Pipeline</h6>
+                    <ul class="small text-muted mb-0 ps-3">
+                        <li>Dataset selection with 1,200+ mixed records.</li>
+                        <li>Missing value imputation (Median & Mode).</li>
+                        <li>Outlier detection & capping via IQR bounds.</li>
+                        <li>StandardScaler feature normalization & One-Hot Encoding.</li>
+                        <li>Training & comparing 5 Regression models.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                    <h6 class="fw-bold text-dark mb-2"><i class="fa-solid fa-desktop text-success me-2"></i>Part 2: Django Web Application</h6>
+                    <ul class="small text-muted mb-0 ps-3">
+                        <li>Interactive file upload interface (.csv / .xlsx).</li>
+                        <li>Comprehensive data summary & preview tables.</li>
+                        <li>Dynamic interactive visual dashboard using Plotly.</li>
+                        <li>Real-time AJAX valuation estimator and model scorecard.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Mathematical Formulations -->
+    <div class="report-card">
+        <h4 class="fw-bold text-dark mb-3">
+            <span class="badge bg-info text-dark me-2">Section 2</span>Data Mining Mathematical Formulations
+        </h4>
+
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark">1. Interquartile Range (IQR) Outlier Detection & Winsorization</h6>
+            <p class="small text-secondary mb-1">
+                Outliers represent extreme variance or data entry errors. The Interquartile Range (IQR) measures statistical dispersion between the 75th percentile ($Q_3$) and 25th percentile ($Q_1$):
+            </p>
+            <div class="math-formula">
+                IQR = Q3 - Q1<br>
+                Lower Bound = max(0, Q1 - 1.5 * IQR)<br>
+                Upper Bound = Q3 + 1.5 * IQR<br>
+                Capping Rule: x_treated = min(max(x, Lower Bound), Upper Bound)
+            </div>
+            <p class="small text-muted">
+                <strong>Why Winsorization / Capping?</strong> Rather than dropping outlier rows (which permanently discards training information), clipping values to the outer bounds preserves sample volume while removing skew.
+            </p>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark">2. StandardScaler Feature Normalization (Z-Score)</h6>
+            <p class="small text-secondary mb-1">
+                Ensures that features with large numerical magnitudes (e.g., Mileage up to 200,000) do not dominate features with small numerical ranges (e.g., Engine Size 1.0 to 5.0):
+            </p>
+            <div class="math-formula">
+                z = (x - &mu;) / &sigma;<br>
+                where &mu; = Mean, &sigma; = Standard Deviation
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h6 class="fw-bold text-dark">3. Evaluation Metrics</h6>
+            <div class="math-formula">
+                R² = 1 - (&sum; (y_i - &ycirc;_i)² / &sum; (y_i - ȳ)²)<br>
+                RMSE = &radic;( (1/n) * &sum; (y_i - &ycirc;_i)² )<br>
+                MAE = (1/n) * &sum; |y_i - &ycirc;_i|
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Model Comparison Table -->
+    <div class="report-card">
+        <h4 class="fw-bold text-dark mb-3">
+            <span class="badge bg-success me-2">Section 3</span>Experimental Results & Model Evaluation
+        </h4>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Algorithm</th>
+                        <th>Type</th>
+                        <th>R² Score</th>
+                        <th>RMSE</th>
+                        <th>MAE</th>
+                        <th>Key Strengths & Observations</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in metrics_summary %}
+                        <tr {% if m.model_name == best_model_name %}class="table-success fw-semibold"{% endif %}>
+                            <td>{{ m.model_name }}</td>
+                            <td>
+                                {% if 'Ridge' in m.model_name or 'Linear' in m.model_name %}
+                                    <span class="badge bg-primary">Linear Parametric</span>
+                                {% elif 'Decision' in m.model_name %}
+                                    <span class="badge bg-warning text-dark">Tree-based</span>
+                                {% else %}
+                                    <span class="badge bg-info text-dark">Ensemble</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ m.r2_score }}</td>
+                            <td>${{ m.rmse }}</td>
+                            <td>${{ m.mae }}</td>
+                            <td class="small text-muted">
+                                {% if 'Ridge' in m.model_name %}
+                                    L2 regularization prevents multicollinearity across one-hot encoded brand flags.
+                                {% elif 'Random Forest' in m.model_name %}
+                                    Averaging over 100 decision trees reduces variance and captures non-linear relationships.
+                                {% elif 'Gradient' in m.model_name %}
+                                    Sequential residual correction yields low bias and high generalization.
+                                {% elif 'Decision Tree' in m.model_name %}
+                                    Fast but exhibits slight overfitting on test split without pruning.
+                                {% else %}
+                                    Effective baseline providing interpretable linear coefficient weights.
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 4: Data Mining Lab Viva-Voce Questions -->
+    <div class="report-card">
+        <h4 class="fw-bold text-dark mb-3">
+            <span class="badge bg-dark me-2">Section 4</span>Viva-Voce / Lab Defense Q&A Guide
+        </h4>
+
+        <div class="qa-box">
+            <div class="fw-bold text-primary mb-1">Q1: Why use Median rather than Mean for missing mileage and engine size?</div>
+            <div class="small text-secondary">
+                Mean is highly sensitive to extreme outliers and asymmetric skewness. In automotive datasets, mileage is right-skewed; median represents the robust 50th percentile and prevents introducing synthetic skew into imputed records.
+            </div>
+        </div>
+
+        <div class="qa-box">
+            <div class="fw-bold text-primary mb-1">Q2: Why use IQR Outlier Capping (Winsorization) over dropping rows?</div>
+            <div class="small text-secondary">
+                Dropping rows permanently shrinks the training set and can introduce selection bias. Capping clips extreme anomalies to $[Q1 - 1.5 \times IQR, Q3 + 1.5 \times IQR]$, preserving the observation and its valid attributes while bounding leverage on the regression line.
+            </div>
+        </div>
+
+        <div class="qa-box">
+            <div class="fw-bold text-primary mb-1">Q3: What is the purpose of One-Hot Encoding in this pipeline?</div>
+            <div class="small text-secondary">
+                Categorical variables like `brand` (Toyota, BMW), `fuel_type` (Petrol, Diesel), and `transmission` (Automatic, Manual) have no natural mathematical ordinal ranking. One-hot encoding converts them into binary indicator columns (0 or 1), preventing false ordinal assumptions in regression matrices.
+            </div>
+        </div>
+
+        <div class="qa-box">
+            <div class="fw-bold text-primary mb-1">Q4: How does R² differ from RMSE?</div>
+            <div class="small text-secondary">
+                $R^2$ is a scale-independent metric between 0 and 1 indicating what fraction of target variance is explained by features. RMSE is scale-dependent and measures average prediction error directly in target units (dollars, $), heavily penalizing large outliers.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,232 @@
+{
+  "best_model_name": "Ridge Regression",
+  "feature_columns": [
+    "year",
+    "mileage",
+    "engine_size",
+    "horsepower",
+    "fuel_efficiency",
+    "seats",
+    "brand_BMW",
+    "brand_Chevrolet",
+    "brand_Ford",
+    "brand_Honda",
+    "brand_Hyundai",
+    "brand_Mercedes-Benz",
+    "brand_Nissan",
+    "brand_Toyota",
+    "brand_Volkswagen",
+    "fuel_type_Electric",
+    "fuel_type_Hybrid",
+    "fuel_type_Petrol",
+    "transmission_Manual",
+    "owner_type_Second",
+    "owner_type_Third"
+  ],
+  "numerical_cols": [
+    "year",
+    "mileage",
+    "engine_size",
+    "horsepower",
+    "fuel_efficiency",
+    "seats"
+  ],
+  "categorical_cols": [
+    "brand",
+    "fuel_type",
+    "transmission",
+    "owner_type"
+  ],
+  "imputation_values": {
+    "year": 2017.0,
+    "mileage": 96576.0,
+    "engine_size": 2.1,
+    "horsepower": 180.0,
+    "fuel_efficiency": 21.5,
+    "seats": 5.0,
+    "brand": "Toyota",
+    "fuel_type": "Petrol",
+    "transmission": "Automatic",
+    "owner_type": "First"
+  },
+  "outlier_bounds": {
+    "mileage": {
+      "lower": 0.0,
+      "upper": 247568.5
+    },
+    "horsepower": {
+      "lower": 0.0,
+      "upper": 389.5
+    },
+    "price": {
+      "lower": 0.0,
+      "upper": 41850.0
+    }
+  },
+  "metrics_summary": [
+    {
+      "model_name": "Linear Regression",
+      "r2_score": 0.9338,
+      "adj_r2_score": 0.9278,
+      "rmse": 2454.33,
+      "mae": 1746.35,
+      "mape": 12.17
+    },
+    {
+      "model_name": "Ridge Regression",
+      "r2_score": 0.9344,
+      "adj_r2_score": 0.9284,
+      "rmse": 2444.12,
+      "mae": 1748.79,
+      "mape": 12.12
+    },
+    {
+      "model_name": "Decision Tree Regressor",
+      "r2_score": 0.7964,
+      "adj_r2_score": 0.7777,
+      "rmse": 4305.94,
+      "mae": 2878.48,
+      "mape": 17.68
+    },
+    {
+      "model_name": "Random Forest Regressor",
+      "r2_score": 0.8982,
+      "adj_r2_score": 0.8889,
+      "rmse": 3043.87,
+      "mae": 2262.03,
+      "mape": 14.74
+    },
+    {
+      "model_name": "Gradient Boosting Regressor",
+      "r2_score": 0.9249,
+      "adj_r2_score": 0.918,
+      "rmse": 2615.05,
+      "mae": 1899.9,
+      "mape": 13.07
+    }
+  ],
+  "feature_importance": {
+    "horsepower": 0.6965,
+    "mileage": 0.1138,
+    "year": 0.0782,
+    "fuel_efficiency": 0.0202,
+    "engine_size": 0.0173,
+    "owner_type_Third": 0.0098,
+    "brand_BMW": 0.0093,
+    "brand_Mercedes-Benz": 0.0081,
+    "brand_Ford": 0.0067,
+    "owner_type_Second": 0.0065,
+    "seats": 0.006,
+    "brand_Nissan": 0.0056,
+    "brand_Chevrolet": 0.004,
+    "fuel_type_Petrol": 0.0036,
+    "transmission_Manual": 0.0035,
+    "brand_Honda": 0.0033,
+    "brand_Toyota": 0.0023,
+    "fuel_type_Hybrid": 0.0021,
+    "fuel_type_Electric": 0.0015,
+    "brand_Hyundai": 0.0013,
+    "brand_Volkswagen": 0.0004
+  },
+  "cleaning_log": {
+    "raw_shape": [
+      1265,
+      13
+    ],
+    "cleaned_shape": [
+      1254,
+      11
+    ],
+    "duplicates_removed": 11,
+    "dropped_irrelevant_columns": [
+      "car_id",
+      "model"
+    ],
+    "total_nulls_before": 125,
+    "total_nulls_after": 0,
+    "null_counts_before": {
+      "car_id": 0,
+      "brand": 0,
+      "model": 0,
+      "year": 0,
+      "fuel_type": 22,
+      "transmission": 0,
+      "owner_type": 0,
+      "mileage": 35,
+      "engine_size": 28,
+      "horsepower": 25,
+      "fuel_efficiency": 0,
+      "seats": 15,
+      "price": 0
+    },
+    "null_counts_after": {
+      "brand": 0,
+      "year": 0,
+      "fuel_type": 0,
+      "transmission": 0,
+      "owner_type": 0,
+      "mileage": 0,
+      "engine_size": 0,
+      "horsepower": 0,
+      "fuel_efficiency": 0,
+      "seats": 0,
+      "price": 0
+    },
+    "imputations": {
+      "mileage": {
+        "method": "Median",
+        "imputed_value": 96576.0,
+        "count": 35
+      },
+      "engine_size": {
+        "method": "Median",
+        "imputed_value": 2.1,
+        "count": 28
+      },
+      "horsepower": {
+        "method": "Median",
+        "imputed_value": 180.0,
+        "count": 25
+      },
+      "seats": {
+        "method": "Median",
+        "imputed_value": 5.0,
+        "count": 15
+      },
+      "fuel_type": {
+        "method": "Mode",
+        "imputed_value": "Petrol",
+        "count": 22
+      }
+    },
+    "outliers": {
+      "mileage": {
+        "Q1": 60803.5,
+        "Q3": 135509.5,
+        "IQR": 74706.0,
+        "lower_bound": 0.0,
+        "upper_bound": 247568.5,
+        "iqr_outliers_treated": 7,
+        "z_score_outliers_count": 7
+      },
+      "horsepower": {
+        "Q1": 142.0,
+        "Q3": 241.0,
+        "IQR": 99.0,
+        "lower_bound": 0.0,
+        "upper_bound": 389.5,
+        "iqr_outliers_treated": 22,
+        "z_score_outliers_count": 1
+      },
+      "price": {
+        "Q1": 10600.0,
+        "Q3": 23100.0,
+        "IQR": 12500.0,
+        "lower_bound": 0.0,
+        "upper_bound": 41850.0,
+        "iqr_outliers_treated": 42,
+        "z_score_outliers_count": 14
+      }
+    }
+  }
+}

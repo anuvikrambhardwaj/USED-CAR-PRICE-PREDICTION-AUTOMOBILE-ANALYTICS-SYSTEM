@@ -1,0 +1,166 @@
+{% extends "analytics/base.html" %}
+
+{% block title %}Visual Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fa-solid fa-chart-line text-primary me-2"></i>3. Visual Analytics & Exploratory Data Analysis
+            </h2>
+            <p class="text-muted mb-0">
+                Dynamic, interactive Plotly visualizations showing distributions, correlations, outliers, and pricing trends for <span class="fw-semibold text-dark">{{ dataset_name }}</span>.
+            </p>
+        </div>
+        <div class="d-flex gap-2 mt-3 mt-md-0">
+            <a href="{% url 'predict' %}" class="btn btn-primary-custom btn-sm">
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Interactive Prediction &rarr;
+            </a>
+            <a href="{% url 'data_summary' %}" class="btn btn-secondary-custom btn-sm">
+                <i class="fa-solid fa-table me-1"></i> Data Summary
+            </a>
+        </div>
+    </div>
+
+    <!-- Analytics KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <div class="custom-card p-3 text-center">
+                <div class="text-muted small fw-semibold">Total Vehicles</div>
+                <div class="fs-4 fw-bold text-dark mt-1">{{ kpis.total_records }}</div>
+                <small class="text-success"><i class="fa-solid fa-check"></i> Cleaned</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <div class="custom-card p-3 text-center">
+                <div class="text-muted small fw-semibold">Mean Price</div>
+                <div class="fs-4 fw-bold text-primary mt-1">${{ kpis.avg_price|floatformat:0 }}</div>
+                <small class="text-muted">Market Average</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <div class="custom-card p-3 text-center">
+                <div class="text-muted small fw-semibold">Median Price</div>
+                <div class="fs-4 fw-bold text-success mt-1">${{ kpis.median_price|floatformat:0 }}</div>
+                <small class="text-muted">50th Percentile</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <div class="custom-card p-3 text-center">
+                <div class="text-muted small fw-semibold">Avg Mileage</div>
+                <div class="fs-4 fw-bold text-info mt-1">{{ kpis.avg_mileage|floatformat:0 }} km</div>
+                <small class="text-muted">Odometer Mean</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <div class="custom-card p-3 text-center">
+                <div class="text-muted small fw-semibold">Top Brand</div>
+                <div class="fs-4 fw-bold text-dark mt-1">{{ kpis.top_brand }}</div>
+                <small class="text-primary">Most Listed</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-4 col-lg-2">
+            <div class="custom-card p-3 text-center">
+                <div class="text-muted small fw-semibold">Primary Fuel</div>
+                <div class="fs-4 fw-bold text-warning mt-1">{{ kpis.most_common_fuel }}</div>
+                <small class="text-muted">High Demand</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="row g-4">
+        <!-- 1. Price Distribution Chart -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100">
+                <div class="card-header-custom">
+                    <span class="fw-bold text-dark">
+                        <i class="fa-solid fa-chart-column text-primary me-2"></i>Target Distribution: Used Car Price
+                    </span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary">Histogram + Box</span>
+                </div>
+                <div class="card-body p-2">
+                    {{ charts.price_distribution|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Mileage vs Price Scatter -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100">
+                <div class="card-header-custom">
+                    <span class="fw-bold text-dark">
+                        <i class="fa-solid fa-braille text-info me-2"></i>Mileage vs. Price Correlation
+                    </span>
+                    <span class="badge bg-info bg-opacity-10 text-info">Scatter + OLS Trend</span>
+                </div>
+                <div class="card-body p-2">
+                    {{ charts.mileage_vs_price|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Valuation by Brand Bar Chart -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100">
+                <div class="card-header-custom">
+                    <span class="fw-bold text-dark">
+                        <i class="fa-solid fa-ranking-star text-warning me-2"></i>Brand Valuation Ranking
+                    </span>
+                    <span class="badge bg-warning bg-opacity-10 text-dark">Mean Selling Price</span>
+                </div>
+                <div class="card-body p-2">
+                    {{ charts.brand_price_bar|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Price by Fuel Type & Transmission Box Plots -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100">
+                <div class="card-header-custom">
+                    <span class="fw-bold text-dark">
+                        <i class="fa-solid fa-gas-pump text-success me-2"></i>Price by Fuel Type & Transmission
+                    </span>
+                    <span class="badge bg-success bg-opacity-10 text-success">Box Plot (IQR Spread)</span>
+                </div>
+                <div class="card-body p-2">
+                    {{ charts.fuel_transmission_box|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Correlation Heatmap -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100">
+                <div class="card-header-custom">
+                    <span class="fw-bold text-dark">
+                        <i class="fa-solid fa-fire-flame-curved text-danger me-2"></i>Pearson Correlation Matrix
+                    </span>
+                    <span class="badge bg-danger bg-opacity-10 text-danger">Multivariate Heatmap</span>
+                </div>
+                <div class="card-body p-2">
+                    {{ charts.correlation_heatmap|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Feature Importance Bar Chart -->
+        <div class="col-lg-6">
+            <div class="custom-card h-100">
+                <div class="card-header-custom">
+                    <span class="fw-bold text-dark">
+                        <i class="fa-solid fa-network-wired text-purple me-2"></i>Feature Importance Ranking
+                    </span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary">Random Forest Ensemble</span>
+                </div>
+                <div class="card-body p-2">
+                    {{ charts.feature_importance|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

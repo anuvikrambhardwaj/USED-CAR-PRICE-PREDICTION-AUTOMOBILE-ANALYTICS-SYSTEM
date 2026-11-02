@@ -1,0 +1,253 @@
+{% extends "analytics/base.html" %}
+
+{% block title %}Dataset Upload & Pipeline Overview{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #172554 100%);
+        color: white;
+        padding: 3.5rem 0 3rem 0;
+        border-radius: 0 0 24px 24px;
+        margin-bottom: 2.5rem;
+    }
+    
+    .dropzone-box {
+        border: 2px dashed #93c5fd;
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .dropzone-box:hover, .dropzone-box.dragover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+    
+    .workflow-step {
+        border-left: 3px solid #2563eb;
+        padding-left: 1.25rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+
+    .workflow-step::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 0;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: #2563eb;
+        border: 2px solid white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Header -->
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 mb-3 rounded-pill bg-info bg-opacity-20 text-info border border-info border-opacity-30 small fw-semibold">
+                    <i class="fa-solid fa-graduation-cap"></i> Data Mining & Analytics Lab Project
+                </div>
+                <h1 class="display-6 fw-bold mb-3">
+                    Used Car Price Prediction & Automobile Analytics System
+                </h1>
+                <p class="lead text-slate-300 opacity-75 mb-4" style="max-width: 680px;">
+                    An end-to-end Data Mining solution implementing missing value imputation, IQR outlier treatment, feature scaling, one-hot encoding, correlation heatmaps, and multi-model machine learning regression.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{% url 'data_summary' %}" class="btn btn-primary-custom px-4">
+                        <i class="fa-solid fa-table me-2"></i>View Data Summary
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-outline-light px-4">
+                        <i class="fa-solid fa-chart-pie me-2"></i>Interactive Analytics
+                    </a>
+                    <a href="{% url 'predict' %}" class="btn btn-outline-info px-4">
+                        <i class="fa-solid fa-calculator me-2"></i>Price Estimator
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center d-none d-lg-block">
+                <div class="p-4 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-10 backdrop-blur">
+                    <i class="fa-solid fa-car-burst text-info mb-3" style="font-size: 3.5rem;"></i>
+                    <h5 class="fw-bold mb-1">Active Model</h5>
+                    <div class="badge bg-success px-3 py-2 fs-6 mb-2">{{ best_model_name }}</div>
+                    <p class="small text-white-50 mb-0">Trained on real-world Kaggle automotive sales data</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row g-4">
+        <!-- 1. File Upload Card -->
+        <div class="col-lg-7">
+            <div class="custom-card h-100">
+                <div class="card-header-custom">
+                    <span class="fs-5 text-dark">
+                        <i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i>1. Dataset Selection & Upload Interface
+                    </span>
+                    <span class="badge bg-primary bg-opacity-10 text-primary">Accepts .CSV / .XLSX</span>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-3">
+                        Upload your raw Kaggle automobile dataset containing numerical and categorical attributes (minimum 500+ records), or initialize the system immediately with our bundled dataset.
+                    </p>
+
+                    <form action="{% url 'upload_dataset' %}" method="POST" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="upload_custom" id="formAction">
+                        <input type="file" name="dataset_file" id="fileInput" class="d-none" accept=".csv, .xlsx, .xls">
+
+                        <div class="dropzone-box mb-4" id="dropzone" onclick="document.getElementById('fileInput').click();">
+                            <i class="fa-solid fa-file-csv text-primary mb-3" style="font-size: 3rem;"></i>
+                            <h5 class="fw-bold text-dark mb-1" id="dropzoneTitle">Click to choose or drag & drop dataset</h5>
+                            <p class="text-muted small mb-0" id="dropzoneSub">Supported formats: .csv, .xlsx (Standard automobile sales columns)</p>
+                            <div class="mt-3 text-primary fw-semibold small" id="selectedFileName"></div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                            <button type="submit" class="btn btn-primary-custom" id="submitBtn">
+                                <i class="fa-solid fa-gear me-1"></i> Preprocess & Train Pipeline
+                            </button>
+
+                            <button type="button" class="btn btn-secondary-custom" onclick="loadDefaultDataset();">
+                                <i class="fa-solid fa-database text-primary me-1"></i> Load Default Kaggle Dataset (1,265 rows)
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <!-- Active Dataset Info -->
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted d-block">Currently Loaded Dataset:</small>
+                                <span class="fw-bold text-dark font-monospace">{{ dataset_name }}</span>
+                                {% if is_custom %}
+                                    <span class="badge bg-info ms-2">Custom Upload</span>
+                                {% else %}
+                                    <span class="badge bg-success ms-2">Kaggle Benchmark</span>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'data_summary' %}" class="btn btn-sm btn-outline-primary">
+                                Preview Dataset &rarr;
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Data Mining Pipeline Stages Card -->
+        <div class="col-lg-5">
+            <div class="custom-card h-100">
+                <div class="card-header-custom">
+                    <span class="fs-5 text-dark">
+                        <i class="fa-solid fa-diagram-project text-primary me-2"></i>Pipeline Architecture
+                    </span>
+                    <span class="badge bg-info bg-opacity-10 text-info">Core Stages</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="workflow-step">
+                        <h6 class="fw-bold text-dark mb-1">1. Missing Value Imputation</h6>
+                        <p class="text-muted small mb-0">
+                            Median imputation for skewed numerical attributes (mileage, engine size, hp); Mode imputation for categorical features (fuel, transmission).
+                        </p>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h6 class="fw-bold text-dark mb-1">2. IQR Outlier Treatment</h6>
+                        <p class="text-muted small mb-0">
+                            Capping anomalies beyond $[Q1 - 1.5 \times IQR, Q3 + 1.5 \times IQR]$ using Winsorization to preserve data volume while stabilizing variance.
+                        </p>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h6 class="fw-bold text-dark mb-1">3. Data Cleaning & Encoding</h6>
+                        <p class="text-muted small mb-0">
+                            Automated duplicate row purging, irrelevant ID removal, One-Hot Encoding for categories, and StandardScaler transformation.
+                        </p>
+                    </div>
+
+                    <div class="workflow-step">
+                        <h6 class="fw-bold text-dark mb-1">4. Model Training & Comparison</h6>
+                        <p class="text-muted small mb-0">
+                            Multi-model evaluation comparing Linear Regression, Ridge, Decision Tree, Random Forest, and Gradient Boosting with $R^2$, RMSE, and MAE.
+                        </p>
+                    </div>
+
+                    <div class="mt-3 pt-2">
+                        <a href="{% url 'lab_report' %}" class="btn btn-outline-secondary w-100 btn-sm">
+                            <i class="fa-solid fa-book-open me-1"></i> Read Complete Lab Project Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const dropzoneTitle = document.getElementById('dropzoneTitle');
+    const dropzoneSub = document.getElementById('dropzoneSub');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const uploadForm = document.getElementById('uploadForm');
+
+    // Drag and drop handlers
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dragover');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dragover');
+        });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            displaySelectedFile(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            displaySelectedFile(fileInput.files[0]);
+        }
+    });
+
+    function displaySelectedFile(file) {
+        dropzoneTitle.textContent = "File Selected:";
+        dropzoneSub.textContent = "Click 'Preprocess & Train Pipeline' below to begin execution.";
+        selectedFileName.innerHTML = `<i class="fa-solid fa-check-circle text-success me-1"></i> ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    }
+
+    function loadDefaultDataset() {
+        document.getElementById('formAction').value = 'load_default';
+        uploadForm.submit();
+    }
+</script>
+{% endblock %}
